@@ -38,8 +38,8 @@ form.addEventListener("submit", async (event) => {
 
   try {
     const result = await axios.post(`${api}/user/signup`, {
-      username: userName,
-      useremail: userEmail,
+      name: userName,
+      email: userEmail,
       password: userPassword,
     });
     console.log(result);
