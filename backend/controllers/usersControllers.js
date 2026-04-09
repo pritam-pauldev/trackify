@@ -9,8 +9,8 @@ const signupCreateUser = async (req, res) => {
       },
     });
     if (findUser) {
-        res.status(409).send("already exist");
-        return;
+      res.status(409).send("already exist");
+      return;
     } else {
       await Users.create({
         name: name,
@@ -31,6 +31,33 @@ const signupCreateUser = async (req, res) => {
   }
 };
 
+const signinUser = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const user = await Users.findOne({
+      where: {
+        email: email,
+      },
+    });
+    if (!user) {
+      console.log("User not found");
+      return res.status(404).send("User not found");
+    } else {
+      if (user.password === password) {
+        console.log("User login Successful");
+        return res.status(200).send("User login Successful");
+      } else {
+        console.log("User not authorized");
+        return res.status(401).send("User not authorized");
+      }
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(500).send(error.message);
+  }
+};
+
 module.exports = {
   signupCreateUser,
+  signinUser,
 };
