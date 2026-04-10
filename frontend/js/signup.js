@@ -44,6 +44,9 @@ form.addEventListener("submit", async (event) => {
     });
     console.log(result);
     showMessage("success", "Account created successfully! Redirecting…");
+    setTimeout(() => {
+      window.location.href = "signin.html";
+    }, 600);
     form.reset();
   } catch (err) {
     console.error(err);

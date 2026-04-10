@@ -1,13 +1,15 @@
 const express = require("express");
 const sequelize = require("./utils/db_connection");
 const usersRoute = require("./routes/usersRoutes");
+const expensesRoute = require("./routes/expensesRoutes");
 const cors = require("cors");
-// require("./models");
+require("./models");
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 app.use("/user", usersRoute);
+app.use("/expense", expensesRoute);
 
 sequelize
   .sync()

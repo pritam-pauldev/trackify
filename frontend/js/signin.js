@@ -42,6 +42,9 @@ form.addEventListener("submit", async (event) => {
     });
     console.log(result);
     showMessage("success", "Signed in successfully! Redirecting…");
+    setTimeout(() => {
+      window.location.href = "expense.html";
+    }, 600);
     form.reset();
   } catch (err) {
     console.error(err);
