@@ -31,9 +31,8 @@ body {
   min-height: 100vh;
 }
 
-/* ── Page shell ── */
 .page-wrapper {
-  max-width: 860px;
+  max-width: 1250px;
   margin: 0 auto;
   padding: 0 20px 60px;
 }
@@ -48,11 +47,7 @@ body {
   margin-bottom: 32px;
 }
 
-.topnav-brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
+.topnav-brand { display: flex; align-items: center; gap: 10px; }
 
 .brand-icon {
   width: 32px;
@@ -175,8 +170,7 @@ body {
 }
 
 .field-group--grow { flex: 1; }
-
-.field-group--btn { min-width: auto; }
+.field-group--btn  { min-width: auto; }
 
 label, .label-spacer {
   font-size: 12px;
@@ -263,7 +257,7 @@ select { padding-right: 30px; cursor: pointer; }
   position: relative;
 }
 
-#submitAddExpenseBtn:hover { background: #1d4ed8; }
+#submitAddExpenseBtn:hover  { background: #1d4ed8; }
 #submitAddExpenseBtn:active { transform: scale(0.98); }
 #submitAddExpenseBtn:disabled { opacity: 0.55; cursor: not-allowed; }
 
@@ -319,12 +313,12 @@ select { padding-right: 30px; cursor: pointer; }
   animation: rowIn 0.25s ease both;
 }
 
+.expense-item:last-child { border-bottom: none; }
+
 @keyframes rowIn {
   from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-
-.expense-item:last-child { border-bottom: none; }
 
 .expense-icon {
   width: 36px;
@@ -362,6 +356,28 @@ select { padding-right: 30px; cursor: pointer; }
   white-space: nowrap;
 }
 
+/* ── Delete button ── */
+.delete-btn {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.delete-btn:hover {
+  background: var(--error-light);
+  border-color: #fecaca;
+  color: var(--error);
+}
+
 /* Category colour chips */
 .expense-icon.cat-food          { background: #fef3c7; color: #92400e; }
 .expense-icon.cat-transport     { background: #dbeafe; color: #1e40af; }
@@ -372,16 +388,6 @@ select { padding-right: 30px; cursor: pointer; }
 .expense-icon.cat-health        { background: #fee2e2; color: #991b1b; }
 .expense-icon.cat-entertainment { background: #e0f2fe; color: #0c4a6e; }
 .expense-icon.cat-other         { background: #f3f4f6; color: #374151; }
-
-/* Category badge */
-.cat-badge {
-  display: inline-block;
-  font-size: 11px;
-  font-weight: 500;
-  padding: 2px 8px;
-  border-radius: 99px;
-  text-transform: capitalize;
-}
 
 /* ── Empty state ── */
 .empty-state {
@@ -404,11 +410,7 @@ select { padding-right: 30px; cursor: pointer; }
   color: var(--text-muted);
 }
 
-.empty-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-primary);
-}
+.empty-title { font-size: 14px; font-weight: 600; color: var(--text-primary); }
 
 .empty-sub {
   font-size: 13px;

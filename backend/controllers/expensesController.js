@@ -53,7 +53,24 @@ const getExpense = async (req, res) => {
   }
 };
 
+const deleteExpense = async (req, res) => {
+  try {
+    const expenseId = req.params.id;
+    await Expense.destroy({
+      where: {
+        id: expenseId,
+      }
+    });
+    console.log("expense is deleted");
+    res.status(200).send("expense deleted");
+  } catch (error) {
+    console.log(error.message);
+    res.status(500).send(error.message);
+  }
+}
+
 module.exports = {
   addExpense,
   getExpense,
+  deleteExpense
 };

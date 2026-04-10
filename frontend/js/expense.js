@@ -105,17 +105,17 @@ function renderExpenses(expenses) {
     return;
   }
 
-  const sorted = [...expenses].sort((a, b) => {
-    return (
+  const sorted = [...expenses].sort(
+    (a, b) =>
       new Date(b.createdAt || b.date || 0) -
-      new Date(a.createdAt || a.date || 0)
-    );
-  });
+      new Date(a.createdAt || a.date || 0),
+  );
 
   expenseList.innerHTML = sorted
     .map((e, i) => {
       const cat = (e.category || "other").toLowerCase();
       const meta = categoryMeta[cat] || categoryMeta.other;
+      const id = e.id || e._id;
       return `
       <div class="expense-item" style="animation-delay:${i * 0.04}s">
         <div class="expense-icon cat-${cat}">${meta.icon}</div>
@@ -124,10 +124,33 @@ function renderExpenses(expenses) {
           <div class="expense-detail">${meta.label}${e.createdAt || e.date ? " · " + formatDate(e.createdAt || e.date) : ""}</div>
         </div>
         <div class="expense-amount">${formatCurrency(e.amount)}</div>
+        <button class="delete-btn" onclick="deleteExpense('${id}', this)" title="Delete">
+          <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+            <path d="M10 11v6M14 11v6"/>
+            <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+          </svg>
+        </button>
       </div>
     `;
     })
     .join("");
+}
+
+async function deleteExpense(id, btn) {
+
+  try {
+    await axios.delete(`${api}/expense/${id}`);
+    await loadExpenses();
+  } catch (err) {
+    const serverMsg = err.response?.data?.message || err.response?.data?.error;
+    showMsg(
+      listMsg,
+      "error",
+      serverMsg || "Failed to delete. Please try again.",
+    );
+  }
 }
 
 async function loadExpenses() {
@@ -137,9 +160,7 @@ async function loadExpenses() {
   try {
     const email = localStorage.getItem("userEmail");
     const res = await axios.get(`${api}/expense`, {
-      headers: {
-        useremail: email,
-      },
+      headers: { useremail: email },
     });
     const expenses = res.data?.expenses || res.data || [];
     updateSummary(expenses);
@@ -184,8 +205,12 @@ form.addEventListener("submit", async (e) => {
 
   try {
     const email = localStorage.getItem("userEmail");
-    console.log(email);
-    await axios.post(`${api}/expense/add`, { amount, description, category, email });
+    await axios.post(`${api}/expense/add`, {
+      amount,
+      description,
+      category,
+      email,
+    });
     showMsg(formMsg, "success", "Expense added successfully!");
     form.reset();
     await loadExpenses();
