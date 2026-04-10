@@ -40,6 +40,7 @@ form.addEventListener("submit", async (event) => {
       email: userEmail,
       password: userPassword,
     });
+    localStorage.setItem("token", result.data.token);
     console.log(result);
     showMessage("success", "Signed in successfully! Redirecting…");
     setTimeout(() => {

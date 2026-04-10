@@ -139,7 +139,6 @@ function renderExpenses(expenses) {
 }
 
 async function deleteExpense(id, btn) {
-
   try {
     await axios.delete(`${api}/expense/${id}`);
     await loadExpenses();
@@ -158,9 +157,11 @@ async function loadExpenses() {
   renderSkeleton();
 
   try {
-    const email = localStorage.getItem("userEmail");
+    const token = localStorage.getItem("token");
     const res = await axios.get(`${api}/expense`, {
-      headers: { useremail: email },
+      headers: {
+        Authorization: `Bearer ${token}`, 
+      },
     });
     const expenses = res.data?.expenses || res.data || [];
     updateSummary(expenses);
@@ -204,13 +205,16 @@ form.addEventListener("submit", async (e) => {
   setLoading(true);
 
   try {
-    const email = localStorage.getItem("userEmail");
-    await axios.post(`${api}/expense/add`, {
-      amount,
-      description,
-      category,
-      email,
-    });
+    const token = localStorage.getItem("token");
+    await axios.post(
+      `${api}/expense/add`,
+      { amount, description, category },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
     showMsg(formMsg, "success", "Expense added successfully!");
     form.reset();
     await loadExpenses();

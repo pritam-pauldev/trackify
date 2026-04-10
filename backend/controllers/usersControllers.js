@@ -1,5 +1,6 @@
 const Users = require("../models/users");
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 
 const signupCreateUser = async (req, res) => {
   try {
@@ -46,15 +47,21 @@ const signinUser = async (req, res) => {
     if (!user) {
       console.log("User not found");
       return res.status(404).send("User not found");
+    }
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (isMatch) {
+      const token = jwt.sign(
+        { userId: user.id },
+        "1q2waSE34rdZXcG457HVnjuY67InKu89PlIFYU64SRTUinvcd4679OJfr",
+        { expiresIn: "1h" },
+      );
+      console.log("User login Successful");
+      return res.status(200).json({
+        token: token,
+      });
     } else {
-      const isMatch = await bcrypt.compare(password, user.password);
-      if (isMatch) {
-        console.log("User login Successful");
-        return res.status(200).send("User login Successful");
-      } else {
-        console.log("User not authorized");
-        return res.status(401).send("User not authorized");
-      }
+      console.log("User not authorized");
+      return res.status(401).send("User not authorized");
     }
   } catch (error) {
     console.log(error);

@@ -3,22 +3,17 @@ const User = require("../models/users");
 
 const addExpense = async (req, res) => {
   try {
-    const { amount, description, category, email } = req.body;
-    const user = await User.findOne({
-      where: {
-        email: email,
-      },
-    });
-    if (!user) {
+    const { amount, description, category } = req.body;
+    const userId = req.user.userId;
+    console.log(`----------==================   ${userId}    ================`);
+    if (!userId) {
       return res.status(404).send("User not found");
     }
-    const id = user.id;
-    console.log(id);
     const expense = await Expense.create({
       amount: amount,
       description: description,
       category: category,
-      UserId: id,
+      UserId: userId,
     });
     console.log("expense is added");
     res.status(202).send("expense is added");
@@ -30,19 +25,10 @@ const addExpense = async (req, res) => {
 
 const getExpense = async (req, res) => {
   try {
-    const email = req.headers.useremail;
-    const user = await User.findOne({
-      where: {
-        email: email,
-      },
-    });
-    if (!user) {
-      return res.status(404).send("User not found");
-    }
-    const id = user.id;
+    const userId = req.user.userId;
     const expenses = await Expense.findAll({
       where: {
-        UserId: id,
+        UserId: userId,
       },
     });
     console.log("expenses fetched");
