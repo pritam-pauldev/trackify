@@ -69,7 +69,15 @@ const signinUser = async (req, res) => {
   }
 };
 
+const verifyPremium = async (req, res) => {
+  const order = await Orders.findOne({
+    where: { userId: req.user.userId, orderStatus: "SUCCESS" },
+  });
+  res.json({ isPremium: !!order });
+};
+
 module.exports = {
   signupCreateUser,
   signinUser,
+  verifyPremium
 };

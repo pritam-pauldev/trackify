@@ -7,29 +7,40 @@
     <link rel="stylesheet" href="./css/expense.css" />
   </head>
   <body>
-
     <div class="page-wrapper">
-
       <header class="topnav">
         <div class="topnav-brand">
           <div class="brand-icon">
-            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
-              <line x1="12" y1="1" x2="12" y2="23"/>
-              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+            <svg
+              width="16"
+              height="16"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="2.2"
+            >
+              <line x1="12" y1="1" x2="12" y2="23" />
+              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
             </svg>
           </div>
           <span class="brand-name">Trackify</span>
         </div>
-        <a href="/dashboard.html" class="nav-back">
-          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <polyline points="15 18 9 12 15 6"/>
+        <a href="/premium.html" class="nav-back">
+          <svg
+            width="14"
+            height="14"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <polyline points="15 18 9 12 15 6" />
           </svg>
-          Dashboard
+          Buy premium
         </a>
       </header>
 
       <main class="main-content">
-
         <div class="summary-strip">
           <div class="summary-card">
             <span class="summary-label">Total spent</span>
@@ -54,17 +65,32 @@
 
           <form id="addExpenseForm">
             <div class="form-row">
-
               <div class="field-group">
                 <label for="amount">Amount</label>
                 <div class="input-wrap">
                   <span class="input-icon">
-                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                      <line x1="12" y1="1" x2="12" y2="23"/>
-                      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                    <svg
+                      width="14"
+                      height="14"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <line x1="12" y1="1" x2="12" y2="23" />
+                      <path
+                        d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"
+                      />
                     </svg>
                   </span>
-                  <input id="amount" required type="number" min="0" step="0.01" placeholder="0.00" />
+                  <input
+                    id="amount"
+                    required
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="0.00"
+                  />
                 </div>
               </div>
 
@@ -72,14 +98,27 @@
                 <label for="description">Description</label>
                 <div class="input-wrap">
                   <span class="input-icon">
-                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                      <line x1="17" y1="10" x2="3" y2="10"/>
-                      <line x1="21" y1="6" x2="3" y2="6"/>
-                      <line x1="21" y1="14" x2="3" y2="14"/>
-                      <line x1="17" y1="18" x2="3" y2="18"/>
+                    <svg
+                      width="14"
+                      height="14"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <line x1="17" y1="10" x2="3" y2="10" />
+                      <line x1="21" y1="6" x2="3" y2="6" />
+                      <line x1="21" y1="14" x2="3" y2="14" />
+                      <line x1="17" y1="18" x2="3" y2="18" />
                     </svg>
                   </span>
-                  <input id="description" required type="text" placeholder="e.g. Grocery run, Rent…" autocomplete="off" />
+                  <input
+                    id="description"
+                    required
+                    type="text"
+                    placeholder="e.g. Grocery run, Rent…"
+                    autocomplete="off"
+                  />
                 </div>
               </div>
 
@@ -87,13 +126,20 @@
                 <label for="category">Category</label>
                 <div class="input-wrap select-wrap">
                   <span class="input-icon">
-                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                      <circle cx="9" cy="5" r="1" fill="currentColor"/>
-                      <circle cx="9" cy="12" r="1" fill="currentColor"/>
-                      <circle cx="9" cy="19" r="1" fill="currentColor"/>
-                      <line x1="14" y1="5" x2="21" y2="5"/>
-                      <line x1="14" y1="12" x2="21" y2="12"/>
-                      <line x1="14" y1="19" x2="21" y2="19"/>
+                    <svg
+                      width="14"
+                      height="14"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <circle cx="9" cy="5" r="1" fill="currentColor" />
+                      <circle cx="9" cy="12" r="1" fill="currentColor" />
+                      <circle cx="9" cy="19" r="1" fill="currentColor" />
+                      <line x1="14" y1="5" x2="21" y2="5" />
+                      <line x1="14" y1="12" x2="21" y2="12" />
+                      <line x1="14" y1="19" x2="21" y2="19" />
                     </svg>
                   </span>
                   <select id="category" required>
@@ -109,8 +155,15 @@
                     <option value="other">Other</option>
                   </select>
                   <span class="select-chevron">
-                    <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                      <polyline points="6 9 12 15 18 9"/>
+                    <svg
+                      width="12"
+                      height="12"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      stroke-width="2.5"
+                    >
+                      <polyline points="6 9 12 15 18 9" />
                     </svg>
                   </span>
                 </div>
@@ -119,14 +172,20 @@
               <div class="field-group field-group--btn">
                 <label class="label-spacer">&nbsp;</label>
                 <button id="submitAddExpenseBtn" type="submit">
-                  <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                    <line x1="12" y1="5" x2="12" y2="19"/>
-                    <line x1="5" y1="12" x2="19" y2="12"/>
+                  <svg
+                    width="14"
+                    height="14"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                  >
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
                   </svg>
                   Add
                 </button>
               </div>
-
             </div>
           </form>
         </section>
@@ -135,18 +194,23 @@
           <div class="card-header">
             <h2 class="card-title">Your expenses</h2>
             <button class="icon-btn" id="refreshBtn" title="Refresh list">
-              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <polyline points="23 4 23 10 17 10"/>
-                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+              <svg
+                width="14"
+                height="14"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <polyline points="23 4 23 10 17 10" />
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
               </svg>
             </button>
           </div>
 
           <div id="listMessage" class="form-message" role="alert"></div>
           <div id="expenseList"></div>
-
         </section>
-
       </main>
     </div>
 

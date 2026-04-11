@@ -5,7 +5,6 @@ const addExpense = async (req, res) => {
   try {
     const { amount, description, category } = req.body;
     const userId = req.user.userId;
-    console.log(`----------==================   ${userId}    ================`);
     if (!userId) {
       return res.status(404).send("User not found");
     }
