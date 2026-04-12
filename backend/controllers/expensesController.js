@@ -1,5 +1,6 @@
 const Expense = require("../models/expense");
 const User = require("../models/users");
+const { Op, fn, col, literal } = require("sequelize");
 
 const addExpense = async (req, res) => {
   try {
@@ -44,7 +45,7 @@ const deleteExpense = async (req, res) => {
     await Expense.destroy({
       where: {
         id: expenseId,
-      }
+      },
     });
     console.log("expense is deleted");
     res.status(200).send("expense deleted");
@@ -52,10 +53,53 @@ const deleteExpense = async (req, res) => {
     console.log(error.message);
     res.status(500).send(error.message);
   }
-}
+};
+
+// monthly leaderboard ──
+const getLeaderboard = async (req, res) => {
+  try {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(
+      now.getFullYear(),
+      now.getMonth() + 1,
+      0,
+      23,
+      59,
+      59,
+    );
+
+    const leaderboard = await Expense.findAll({
+      attributes: ["UserId", [fn("SUM", col("amount")), "totalSpent"]],
+      where: {
+        createdAt: { [Op.between]: [startOfMonth, endOfMonth] },
+      },
+      include: [
+        {
+          model: User,
+          attributes: ["name"],
+        },
+      ],
+      group: ["UserId", "User.id"],
+      order: [[literal("totalSpent"), "DESC"]],
+    });
+
+    const result = leaderboard.map((entry, index) => ({
+      rank: index + 1,
+      name: entry.User?.name || "Unknown",
+      totalSpent: parseFloat(entry.dataValues.totalSpent || 0),
+    }));
+
+    res.status(200).json(result);
+  } catch (error) {
+    console.log(error.message);
+    res.status(500).send(error.message);
+  }
+};
 
 module.exports = {
   addExpense,
   getExpense,
-  deleteExpense
+  deleteExpense,
+  getLeaderboard,
 };

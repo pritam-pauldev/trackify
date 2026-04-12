@@ -20,6 +20,7 @@ const signupCreateUser = async (req, res) => {
         name: name,
         email: email,
         password: hash,
+        isPremium: false
       });
 
       console.log(`user: ${name}, email: ${email} account is created`);
@@ -51,7 +52,10 @@ const signinUser = async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (isMatch) {
       const token = jwt.sign(
-        { userId: user.id },
+        {
+          userId: user.id,
+          isPremium: user.isPremium, 
+        },
         "1q2waSE34rdZXcG457HVnjuY67InKu89PlIFYU64SRTUinvcd4679OJfr",
         { expiresIn: "1h" },
       );

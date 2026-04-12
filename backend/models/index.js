@@ -6,9 +6,13 @@ const Orders = require("../models/order");
 Users.hasMany(Expenses);
 Expenses.belongsTo(Users);
 
-//one to one
-Users.hasMany(Orders)
-Orders.belongsTo(Users);
+//one to many
+Users.hasMany(Orders, {
+  foreignKey: "userId",
+});
+Orders.belongsTo(Users, {
+  foreignKey: "userId",
+});
 
 module.exports = {
   Users,

@@ -37,16 +37,6 @@ const createOrder = async (
     console.log(error.message);
     console.error("Error setting up order request:", error.response.data);
   }
-
-  // cashfree
-  //   .PGCreateOrder(request)
-  //   .then((response) => {
-  //     var a = response.data;
-  //     console.log(a);
-  //   })
-  //   .catch((error) => {
-  //     console.error("Error setting up order request:", error.response.data);
-  //   });
 };
 
 const verifyOrder = async (orderId) => {

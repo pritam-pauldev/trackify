@@ -3,7 +3,7 @@ const sequelize = require("./utils/db_connection");
 const usersRoute = require("./routes/usersRoutes");
 const expensesRoute = require("./routes/expensesRoutes");
 const ordersRoute = require("./routes/ordersRoutes");
-const paymentRoute = require("./routes/paymentRoutes")
+const paymentRoute = require("./routes/paymentRoutes");
 const cors = require("cors");
 require("./models");
 const app = express();

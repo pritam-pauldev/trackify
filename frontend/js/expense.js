@@ -140,7 +140,12 @@ function renderExpenses(expenses) {
 
 async function deleteExpense(id, btn) {
   try {
-    await axios.delete(`${api}/expense/${id}`);
+    const token = localStorage.getItem("token");
+    await axios.delete(`${api}/expense/${id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
     await loadExpenses();
   } catch (err) {
     const serverMsg = err.response?.data?.message || err.response?.data?.error;
@@ -159,9 +164,7 @@ async function loadExpenses() {
   try {
     const token = localStorage.getItem("token");
     const res = await axios.get(`${api}/expense`, {
-      headers: {
-        Authorization: `Bearer ${token}`, 
-      },
+      headers: { Authorization: `Bearer ${token}` },
     });
     const expenses = res.data?.expenses || res.data || [];
     updateSummary(expenses);
@@ -182,6 +185,160 @@ async function loadExpenses() {
         serverMsg || "Failed to load expenses. Please try again.",
       );
     }
+  }
+}
+
+// ── decode JWT without any library ──
+function parseJwt(token) {
+  try {
+    const base64Payload = token.split(".")[1];
+    const decoded = atob(base64Payload.replace(/-/g, "+").replace(/_/g, "/"));
+    return JSON.parse(decoded);
+  } catch (e) {
+    return null;
+  }
+}
+
+// ── fetch and render leaderboard inside its own separate card ──
+async function showLeaderboard() {
+  const token = localStorage.getItem("token");
+  const leaderboardCard = document.getElementById("leaderboardCard");
+  const btn = document.getElementById("leaderboardBtn");
+  const leaderboardList = document.getElementById("leaderboardList");
+
+  // toggle off if already visible
+  if (leaderboardCard.style.display !== "none") {
+    leaderboardCard.style.display = "none";
+    btn.textContent = "Show Leaderboard 🏆";
+    return;
+  }
+
+  leaderboardCard.style.display = "block";
+  btn.textContent = "Hide Leaderboard";
+
+  leaderboardList.innerHTML = `
+    <div class="skeleton-row"></div>
+    <div class="skeleton-row"></div>
+    <div class="skeleton-row"></div>
+  `;
+
+  try {
+    const res = await axios.get(`${api}/expense/leaderboard`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    const data = res.data;
+
+    if (!data || data.length === 0) {
+      leaderboardList.innerHTML = `
+        <div class="empty-state">
+          <p class="empty-title">No data yet</p>
+          <p class="empty-sub">No expenses recorded this month.</p>
+        </div>
+      `;
+      return;
+    }
+
+    const medals = ["🥇", "🥈", "🥉"];
+
+    leaderboardList.innerHTML = data
+      .map(
+        (entry, i) => `
+      <div class="expense-item" style="animation-delay:${i * 0.04}s">
+        <div class="expense-icon cat-other" style="font-size:18px;">
+          ${medals[i] || "#" + entry.rank}
+        </div>
+        <div class="expense-meta">
+          <div class="expense-description">${entry.name}</div>
+          <div class="expense-detail">Rank #${entry.rank} · This month</div>
+        </div>
+        <div class="expense-amount">${formatCurrency(entry.totalSpent)}</div>
+      </div>
+    `,
+      )
+      .join("");
+  } catch (err) {
+    leaderboardList.innerHTML = `
+      <p style="font-size:13px; color:#dc2626; padding: 10px 0;">
+        Failed to load leaderboard. Please try again.
+      </p>
+    `;
+  }
+}
+
+// ── inject premium or upgrade UI via DOM manipulation ──
+function renderPremiumUI() {
+  const token = localStorage.getItem("token");
+  if (!token) return;
+
+  const user = parseJwt(token);
+  if (!user) return;
+
+  const mainContent = document.querySelector(".main-content");
+  const secondCard = document.querySelectorAll(".card")[1]; // expense list card
+
+  // ── Premium container (banner) ──
+  const premiumContainer = document.createElement("div");
+  premiumContainer.id = "premiumContainer";
+
+  if (user.isPremium) {
+    premiumContainer.innerHTML = `
+      <div class="premium-banner">
+        <div class="premium-banner-left">
+          <div class="premium-icon">
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+            </svg>
+          </div>
+          <div>
+            <p class="premium-title">Premium member</p>
+            <p class="premium-sub">You have access to all premium features</p>
+          </div>
+        </div>
+        <button class="leaderboard-btn" id="leaderboardBtn">Show Leaderboard 🏆</button>
+      </div>
+    `;
+  } else {
+    premiumContainer.innerHTML = `
+      <div class="upgrade-banner">
+        <div class="upgrade-left">
+          <div class="upgrade-icon">
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+            </svg>
+          </div>
+          <div>
+            <p class="upgrade-title">Upgrade to Premium</p>
+            <p class="upgrade-sub">Get access to leaderboards and advanced insights</p>
+          </div>
+        </div>
+        <a href="/premium.html" class="upgrade-btn">Upgrade</a>
+      </div>
+    `;
+  }
+
+  // inject before the expense list card
+  mainContent.insertBefore(premiumContainer, secondCard);
+
+  // ── Leaderboard card — separate card AFTER expense list card ──
+  if (user.isPremium) {
+    const leaderboardCard = document.createElement("section");
+    leaderboardCard.id = "leaderboardCard";
+    leaderboardCard.className = "card";
+    leaderboardCard.style.display = "none"; // hidden by default
+    leaderboardCard.innerHTML = `
+      <div class="card-header">
+        <h2 class="card-title">🏆 Monthly Leaderboard</h2>
+      </div>
+      <div id="leaderboardList"></div>
+    `;
+
+    // inject AFTER the expense list card
+    secondCard.insertAdjacentElement("afterend", leaderboardCard);
+
+    document
+      .getElementById("leaderboardBtn")
+      .addEventListener("click", showLeaderboard);
   }
 }
 
@@ -209,11 +366,7 @@ form.addEventListener("submit", async (e) => {
     await axios.post(
       `${api}/expense/add`,
       { amount, description, category },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      },
+      { headers: { Authorization: `Bearer ${token}` } },
     );
     showMsg(formMsg, "success", "Expense added successfully!");
     form.reset();
@@ -251,6 +404,8 @@ form.addEventListener("submit", async (e) => {
     setLoading(false);
   }
 });
+
+renderPremiumUI();
 
 refreshBtn.addEventListener("click", loadExpenses);
 
