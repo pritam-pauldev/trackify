@@ -20,7 +20,7 @@ const signupCreateUser = async (req, res) => {
         name: name,
         email: email,
         password: hash,
-        isPremium: false
+        isPremium: false,
       });
 
       console.log(`user: ${name}, email: ${email} account is created`);
@@ -54,7 +54,7 @@ const signinUser = async (req, res) => {
       const token = jwt.sign(
         {
           userId: user.id,
-          isPremium: user.isPremium, 
+          isPremium: user.isPremium,
         },
         "1q2waSE34rdZXcG457HVnjuY67InKu89PlIFYU64SRTUinvcd4679OJfr",
         { expiresIn: "1h" },
@@ -73,15 +73,7 @@ const signinUser = async (req, res) => {
   }
 };
 
-const verifyPremium = async (req, res) => {
-  const order = await Orders.findOne({
-    where: { userId: req.user.userId, orderStatus: "SUCCESS" },
-  });
-  res.json({ isPremium: !!order });
-};
-
 module.exports = {
   signupCreateUser,
   signinUser,
-  verifyPremium
 };
