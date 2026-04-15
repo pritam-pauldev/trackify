@@ -1,6 +1,7 @@
 const Expense = require("../models/expense");
 const User = require("../models/users");
 const { Op, fn, col, literal } = require("sequelize");
+const sequelize = require("../utils/db_connection");
 
 const addExpense = async (req, res) => {
   try {
@@ -59,6 +60,7 @@ const deleteExpense = async (req, res) => {
 const getLeaderboard = async (req, res) => {
   try {
     const now = new Date();
+
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const endOfMonth = new Date(
       now.getFullYear(),
@@ -69,25 +71,30 @@ const getLeaderboard = async (req, res) => {
       59,
     );
 
+    // DB does grouping + sum
     const leaderboard = await Expense.findAll({
-      attributes: ["UserId", [fn("SUM", col("amount")), "totalSpent"]],
-      where: {
-        createdAt: { [Op.between]: [startOfMonth, endOfMonth] },
-      },
-      include: [
-        {
-          model: User,
-          attributes: ["name"],
-        },
+      attributes: [
+        "UserId",
+        [sequelize.fn("SUM", sequelize.col("amount")), "totalSpent"],
       ],
-      group: ["UserId", "User.id"],
-      order: [[literal("totalSpent"), "DESC"]],
+      where: {
+        createdAt: {
+          [Op.between]: [startOfMonth, endOfMonth],
+        },
+      },
+      include: {
+        model: User,
+        attributes: ["name"],
+      },
+      group: ["UserId", "User.id"], // GROUP BY
+      order: [[sequelize.col("totalSpent"), "DESC"]],
     });
 
-    const result = leaderboard.map((entry, index) => ({
+    // just format + rank
+    const result = leaderboard.map((item, index) => ({
       rank: index + 1,
-      name: entry.User?.name || "Unknown",
-      totalSpent: parseFloat(entry.dataValues.totalSpent || 0),
+      name: item.User.name,
+      totalSpent: Number(item.dataValues.totalSpent),
     }));
 
     res.status(200).json(result);
@@ -96,6 +103,27 @@ const getLeaderboard = async (req, res) => {
     res.status(500).send(error.message);
   }
 };
+
+// const getLeaderboard = async (req, res) => {
+//   try {
+//     const users = await Expense.findAll({
+//       attributes: ["id", "name"],
+//     });
+//     const expenses = await Expense.findAll({
+//       attributes: [
+//         "UserId",
+//         [sequelize.fn("sum", sequelize.col(expenses.amount)), "totalCost"],
+//       ],
+//       group: ["UserId"],
+//     });
+//     var userLeaderBoardDetails = [];
+//     users.forEach((user) => {
+//       userLeaderBoardDetails.push({ name: User.name, totalCost: expenses });
+//     });
+//     userLeaderBoardDetails.sort((a, b) => b.totalCost - a.totalCost);
+//     res.status(200).json(expenses);
+//   } catch (error) {}
+// };
 
 module.exports = {
   addExpense,
