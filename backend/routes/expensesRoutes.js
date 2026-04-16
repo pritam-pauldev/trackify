@@ -3,18 +3,19 @@ const express = require("express");
 const route = express.Router();
 const authMiddleware = require("../middleware/authMiddleware");
 const premiumMiddleware = require("../middleware/premiumMiddleware");
-const controller = require("../controllers/expensesController");
+const expenseController = require("../controllers/expensesController");
+const leaderboardController = require("../controllers/leaderboardController");
 
-route.post("/add", authMiddleware, controller.addExpense);
-route.get("/", authMiddleware, controller.getExpense);
-route.delete("/:id", authMiddleware, controller.deleteExpense);
+route.post("/add", authMiddleware, expenseController.addExpense);
+route.get("/", authMiddleware, expenseController.getExpense);
+route.delete("/:id", authMiddleware, expenseController.deleteExpense);
 
 // premium only ──
 route.get(
   "/leaderboard",
   authMiddleware,
   premiumMiddleware,
-  controller.getLeaderboard,
+  leaderboardController.getLeaderboard
 );
 
 module.exports = route;

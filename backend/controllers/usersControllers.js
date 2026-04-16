@@ -21,6 +21,7 @@ const signupCreateUser = async (req, res) => {
         email: email,
         password: hash,
         isPremium: false,
+        totalExpense: 0
       });
 
       console.log(`user: ${name}, email: ${email} account is created`);
