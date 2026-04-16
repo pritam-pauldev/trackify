@@ -3,6 +3,7 @@ const { Sequelize, DataTypes } = require("sequelize");
 const sequelize = new Sequelize("trackify", "root", "PRIyaNPRIya", {
   host: "localhost",
   dialect: "mysql",
+  logging: false,
 });
 
 sequelize

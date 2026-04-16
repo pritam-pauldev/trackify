@@ -2,10 +2,13 @@ const Expense = require("../models/expense");
 const User = require("../models/users");
 const { Op, fn, col, literal } = require("sequelize");
 const sequelize = require("../utils/db_connection");
+const ai = require("../services/geminiServices");
 
 const addExpense = async (req, res) => {
   try {
-    const { amount, description, category } = req.body;
+    const { amount, description} = req.body;
+    const category = await ai(description);
+    console.log(category);
     const userId = req.user.userId;
     if (!userId) {
       return res.status(404).send("User not found");

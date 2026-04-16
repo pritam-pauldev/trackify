@@ -349,24 +349,29 @@ form.addEventListener("submit", async (e) => {
 
   const amount = parseFloat(document.querySelector("#amount").value);
   const description = document.querySelector("#description").value.trim();
-  const category = document.querySelector("#category").value;
+  // const category = document.querySelector("#category").value;
 
   if (!amount || amount <= 0) {
     showMsg(formMsg, "error", "Please enter a valid amount greater than zero.");
     return;
   }
-  if (!category) {
-    showMsg(formMsg, "error", "Please select a category for this expense.");
-    return;
-  }
+  // if (!category) {
+  //   showMsg(formMsg, "error", "Please select a category for this expense.");
+  //   return;
+  // }
 
   setLoading(true);
 
   try {
     const token = localStorage.getItem("token");
+    // await axios.post(
+    //   `${api}/expense/add`,
+    //   { amount, description, category },
+    //   { headers: { Authorization: `Bearer ${token}` } },
+    // );
     await axios.post(
       `${api}/expense/add`,
-      { amount, description, category },
+      { amount, description },
       { headers: { Authorization: `Bearer ${token}` } },
     );
     showMsg(formMsg, "success", "Expense added successfully!");
