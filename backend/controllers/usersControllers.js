@@ -1,6 +1,10 @@
 const Users = require("../models/users");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const crypto = require("crypto");
+const sendPasswordResetEmail = require("../utils/sendEmail");
+const { Op } = require("sequelize");
+require("dotenv").config();
 
 const signupCreateUser = async (req, res) => {
   try {
@@ -21,7 +25,7 @@ const signupCreateUser = async (req, res) => {
         email: email,
         password: hash,
         isPremium: false,
-        totalExpense: 0
+        totalExpense: 0,
       });
 
       console.log(`user: ${name}, email: ${email} account is created`);
@@ -74,7 +78,79 @@ const signinUser = async (req, res) => {
   }
 };
 
+// ── FORGOT PASSWORD ─────────────────────────────────────────
+const forgotPassword = async (req, res) => {
+  console.log("SMTP USER:", process.env.BREVO_SMTP_USER);
+  console.log("SMTP PASS:", process.env.BREVO_SMTP_PASS?.slice(0, 10));
+  try {
+    const { email } = req.body;
+    const user = await Users.findOne({ where: { email } });
+
+    // Always respond the same — never leak if email exists
+    if (!user) {
+      return res.status(200).json({
+        message: "If this email is registered, a reset link has been sent.",
+      });
+    }
+
+    const token = crypto.randomBytes(32).toString("hex");
+    const expiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
+
+    user.resetPasswordToken = token;
+    user.resetPasswordExpiry = expiry;
+    await user.save();
+
+    const resetLink = `${process.env.FRONTEND_URL}/reset-password.html?token=${token}`;
+    await sendPasswordResetEmail(user.email, resetLink);
+
+    console.log(`Password reset email sent to: ${email}`);
+    return res.status(200).json({
+      message: "If this email is registered, a reset link has been sent.",
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+// ── RESET PASSWORD ──────────────────────────────────────────
+const resetPassword = async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+
+    const user = await Users.findOne({
+      where: {
+        resetPasswordToken: token,
+        resetPasswordExpiry: { [Op.gt]: new Date() }, // token must not be expired
+      },
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        message:
+          "Reset link is invalid or has expired. Please request a new one.",
+      });
+    }
+
+    const hash = await bcrypt.hash(newPassword, 10);
+    user.password = hash;
+    user.resetPasswordToken = null;
+    user.resetPasswordExpiry = null;
+    await user.save();
+
+    console.log(`Password reset successful for: ${user.email}`);
+    return res
+      .status(200)
+      .json({ message: "Password reset successfully! You can now sign in." });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   signupCreateUser,
   signinUser,
+  forgotPassword,
+  resetPassword,
 };

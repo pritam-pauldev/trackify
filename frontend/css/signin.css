@@ -39,8 +39,10 @@ body {
   padding: 24px;
 }
 
-/* ── Card ── */
-#signinForm {
+/* ── Card (all three forms) ── */
+#signinForm,
+#forgotForm,
+#resetForm {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 16px;
@@ -102,7 +104,9 @@ body {
   margin-bottom: 14px;
 }
 
-#signinForm label {
+#signinForm label,
+#forgotForm label,
+#resetForm label {
   font-size: 13px;
   font-weight: 500;
   color: var(--text-primary);
@@ -129,7 +133,9 @@ body {
   color: var(--accent);
 }
 
-#signinForm input {
+#signinForm input,
+#forgotForm input,
+#resetForm input {
   width: 100%;
   background: var(--surface);
   border: 1.5px solid var(--border);
@@ -143,28 +149,38 @@ body {
   transition: border-color 0.18s, box-shadow 0.18s;
 }
 
-#signinForm input::placeholder {
+#signinForm input::placeholder,
+#forgotForm input::placeholder,
+#resetForm input::placeholder {
   color: var(--text-muted);
   font-weight: 400;
 }
 
-#signinForm input:focus {
+#signinForm input:focus,
+#forgotForm input:focus,
+#resetForm input:focus {
   border-color: var(--border-focus);
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
-#signinForm input.input-error {
+#signinForm input.input-error,
+#forgotForm input.input-error,
+#resetForm input.input-error {
   border-color: var(--error);
   box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.08);
 }
 
-#signinForm input:-webkit-autofill {
+#signinForm input:-webkit-autofill,
+#forgotForm input:-webkit-autofill,
+#resetForm input:-webkit-autofill {
   -webkit-box-shadow: 0 0 0px 1000px #ffffff inset;
   -webkit-text-fill-color: var(--text-primary);
 }
 
-/* ── Submit button ── */
-#submitSigninBtn {
+/* ── Submit buttons (all three) ── */
+#submitSigninBtn,
+#submitForgotBtn,
+#submitResetBtn {
   width: 100%;
   margin-top: 10px;
   padding: 12px;
@@ -182,26 +198,36 @@ body {
   position: relative;
 }
 
-#submitSigninBtn:hover {
+#submitSigninBtn:hover,
+#submitForgotBtn:hover,
+#submitResetBtn:hover {
   background: #1d4ed8;
   box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
 }
 
-#submitSigninBtn:active {
+#submitSigninBtn:active,
+#submitForgotBtn:active,
+#submitResetBtn:active {
   transform: scale(0.99);
 }
 
-#submitSigninBtn:disabled {
+#submitSigninBtn:disabled,
+#submitForgotBtn:disabled,
+#submitResetBtn:disabled {
   opacity: 0.55;
   cursor: not-allowed;
 }
 
-#submitSigninBtn.loading {
+#submitSigninBtn.loading,
+#submitForgotBtn.loading,
+#submitResetBtn.loading {
   color: transparent;
   pointer-events: none;
 }
 
-#submitSigninBtn.loading::after {
+#submitSigninBtn.loading::after,
+#submitForgotBtn.loading::after,
+#submitResetBtn.loading::after {
   content: '';
   position: absolute;
   width: 16px;
@@ -284,9 +310,29 @@ body {
   text-decoration: underline;
 }
 
+/* ── Forgot password link (signin page only) ── */
+.forgot-link {
+  text-align: right;
+  margin-top: -8px;
+  margin-bottom: 4px;
+}
+
+.forgot-link a {
+  font-size: 0.82rem;
+  color: #6b7280;
+  text-decoration: none;
+}
+
+.forgot-link a:hover {
+  color: #4f46e5;
+  text-decoration: underline;
+}
+
 /* ── Responsive ── */
 @media (max-width: 480px) {
-  #signinForm {
+  #signinForm,
+  #forgotForm,
+  #resetForm {
     padding: 32px 24px;
     border-radius: 12px;
   }

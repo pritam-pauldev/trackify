@@ -27,8 +27,18 @@ const Users = sequelize.define("Users", {
   },
   totalExpense: {
     type: DataTypes.INTEGER,
-    allowNull: false
-  }
+    allowNull: false,
+  },
+  resetPasswordToken: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    defaultValue: null,
+  },
+  resetPasswordExpiry: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    defaultValue: null,
+  },
 });
 
 module.exports = Users;

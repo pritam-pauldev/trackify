@@ -7,6 +7,7 @@ const paymentController = require("../controllers/paymentController");
 route.post("/signup", usersController.signupCreateUser);
 route.post("/signin", usersController.signinUser);
 route.get("/premium-status", authMiddleware, paymentController.verifyPremium);
-
+route.post("/forgot-password", usersController.forgotPassword);
+route.post("/reset-password", usersController.resetPassword);
 
 module.exports = route;
