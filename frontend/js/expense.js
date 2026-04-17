@@ -76,6 +76,14 @@ function formatDate(dateStr) {
   });
 }
 
+function isPremiumUser() {
+  const token = localStorage.getItem("token");
+  if (!token) return false;
+
+  const user = parseJwt(token);
+  return user?.isPremium;
+}
+
 // =============    start    =>=>=>=>=>=>=>=>=>=>=>=>=>=>=>=>=>=>=>=>=>=>=>=>=>=>=>
 // PAGE LOAD (PREMIUM OR NON-PREMIUM UI) ==========================================
 function renderPremiumUI() {
@@ -377,6 +385,9 @@ form.addEventListener("submit", async (e) => {
     showMsg(formMsg, "success", "Expense added successfully!");
     form.reset();
     await loadExpenses();
+    if (isPremiumUser()) {
+      await showLeaderboard();
+    }
   } catch (err) {
     const status = err.response?.status;
     const serverMsg = err.response?.data?.message || err.response?.data?.error;
@@ -421,6 +432,9 @@ async function deleteExpense(id, btn) {
       },
     });
     await loadExpenses();
+    if (isPremiumUser()) {
+      await showLeaderboard();
+    }
   } catch (err) {
     const serverMsg = err.response?.data?.message || err.response?.data?.error;
     showMsg(
