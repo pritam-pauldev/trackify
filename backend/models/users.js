@@ -1,5 +1,5 @@
 const sequelize = require("../utils/db_connection");
-const { Sequelize, DataTypes } = require("sequelize");
+const { DataTypes } = require("sequelize");
 
 const Users = sequelize.define("Users", {
   id: {
@@ -28,16 +28,6 @@ const Users = sequelize.define("Users", {
   totalExpense: {
     type: DataTypes.INTEGER,
     allowNull: false,
-  },
-  resetPasswordToken: {
-    type: DataTypes.STRING,
-    allowNull: true,
-    defaultValue: null,
-  },
-  resetPasswordExpiry: {
-    type: DataTypes.DATE,
-    allowNull: true,
-    defaultValue: null,
   },
 });
 

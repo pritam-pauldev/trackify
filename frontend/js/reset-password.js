@@ -26,13 +26,13 @@ function setLoading(loading) {
   submitBtn.disabled = loading;
 }
 
-// ── Read token from URL (?token=abc123) ─────────────────────
-const token = new URLSearchParams(window.location.search).get("token");
+// Read UUID from URL (?id=<uuid>)
+const uuid = new URLSearchParams(window.location.search).get("id");
 
-if (!token) {
+if (!uuid) {
   showMessage(
     "error",
-    "Invalid or missing reset token. Please request a new link.",
+    "Invalid or missing reset link. Please request a new one.",
   );
   document.querySelector("#submitResetBtn").disabled = true;
 }
@@ -54,8 +54,7 @@ form.addEventListener("submit", async (e) => {
   setLoading(true);
 
   try {
-    const result = await axios.post(`${api}/user/reset-password`, {
-      token,
+    const result = await axios.post(`${api}/password/resetpassword/${uuid}`, {
       newPassword,
     });
     showMessage("success", result.data.message + " Redirecting to sign in…");
@@ -68,7 +67,7 @@ form.addEventListener("submit", async (e) => {
     if (err.response?.status === 400) {
       showMessage(
         "error",
-        serverMsg || "Reset link is invalid or has expired.",
+        serverMsg || "Reset link is invalid or has already been used.",
       );
     } else if (!err.response) {
       showMessage(

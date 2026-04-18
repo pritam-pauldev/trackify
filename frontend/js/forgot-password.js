@@ -34,7 +34,9 @@ form.addEventListener("submit", async (e) => {
   setLoading(true);
 
   try {
-    const result = await axios.post(`${api}/user/forgot-password`, { email });
+    const result = await axios.post(`${api}/password/forgotpassword`, {
+      email,
+    });
     showMessage("success", result.data.message);
     form.reset();
   } catch (err) {
