@@ -85,6 +85,225 @@ function isPremiumUser() {
 }
 
 // =============    start    =>=>=>=>=>=>=>=>=>=>=>=>=>=>=>=>=>=>=>=>=>=>=>=>=>=>=>
+
+// ── PREMIUM ANALYTICS ────────────────────────────────────────────────────────
+
+// Inject the analytics card after leaderboard card (called inside renderPremiumUI if premium)
+function injectAnalyticsCard() {
+  if (document.getElementById("analyticsCard")) return; // already injected
+
+  const analyticsCard = document.createElement("section");
+  analyticsCard.id = "analyticsCard";
+  analyticsCard.className = "card";
+  analyticsCard.innerHTML = `
+    <div class="card-header">
+      <h2 class="card-title">📊 Financial Report</h2>
+      <div class="analytics-filter" id="analyticsFilter">
+        <button class="filter-btn active" data-range="monthly">Monthly</button>
+        <button class="filter-btn" data-range="weekly">Weekly</button>
+        <button class="filter-btn" data-range="daily">Daily</button>
+      </div>
+    </div>
+    <div id="analyticsContent">
+      <div class="skeleton-row"></div>
+      <div class="skeleton-row"></div>
+      <div class="skeleton-row"></div>
+    </div>
+  `;
+
+  // inject after leaderboard card if present, else after expense list card
+  const anchor =
+    document.getElementById("leaderboardCard") ||
+    document.querySelectorAll(".card")[1];
+  anchor.insertAdjacentElement("afterend", analyticsCard);
+
+  // filter button events
+  document.getElementById("analyticsFilter").addEventListener("click", (e) => {
+    const btn = e.target.closest(".filter-btn");
+    if (!btn) return;
+    document
+      .querySelectorAll(".filter-btn")
+      .forEach((b) => b.classList.remove("active"));
+    btn.classList.add("active");
+    renderAnalytics(btn.dataset.range);
+  });
+}
+
+// Main renderer
+function renderAnalytics(range = "monthly") {
+  const token = localStorage.getItem("token");
+  const user = parseJwt(token);
+  if (!user?.isPremium) return;
+
+  const container = document.getElementById("analyticsContent");
+  if (!container) return;
+
+  // Grab expenses already in the DOM / re-fetch via axios
+  const token2 = localStorage.getItem("token");
+  axios
+    .get(`${api}/expense/report`, {
+      headers: { Authorization: `Bearer ${token2}` },
+    })
+    .then((res) => {
+      const raw = res.data?.expenses || res.data || [];
+
+      // ── Build rows filtered by range ──────────────────────────────────────
+      const now = new Date();
+      const filtered = raw.filter((e) => {
+        const d = new Date(e.createdAt || e.date || 0);
+        if (range === "daily") {
+          return d.toDateString() === now.toDateString();
+        } else if (range === "weekly") {
+          const weekAgo = new Date(now);
+          weekAgo.setDate(now.getDate() - 6);
+          return d >= weekAgo && d <= now;
+        } else {
+          // monthly
+          return (
+            d.getMonth() === now.getMonth() &&
+            d.getFullYear() === now.getFullYear()
+          );
+        }
+      });
+
+      // ── Build yearly totals ───────────────────────────────────────────────
+      const yearlyData = raw.filter((e) => {
+        const d = new Date(e.createdAt || e.date || 0);
+        return d.getFullYear() === now.getFullYear();
+      });
+
+      renderAnalyticsTable(container, filtered, yearlyData, range);
+    })
+    .catch(() => {
+      container.innerHTML = `<p style="font-size:13px;color:#dc2626;padding:10px 0">Failed to load analytics.</p>`;
+    });
+}
+
+function renderAnalyticsTable(container, rows, yearlyRows, range) {
+  // ── Per-entry classification: treat "salary" category as income, rest as expense
+  // If your backend has an explicit "type" field, swap e.category === "salary" with e.type === "income"
+  const isIncome = (e) =>
+    (e.type || "").toLowerCase() === "income" ||
+    (e.category || "").toLowerCase() === "salary";
+
+  const sorted = [...rows].sort(
+    (a, b) =>
+      new Date(b.createdAt || b.date || 0) -
+      new Date(a.createdAt || a.date || 0),
+  );
+
+  let totalIncome = 0;
+  let totalExpense = 0;
+
+  const rowsHtml = sorted
+    .map((e, i) => {
+      const income = isIncome(e);
+      const amt = parseFloat(e.amount || 0);
+      if (income) totalIncome += amt;
+      else totalExpense += amt;
+
+      const cat = (e.category || "other").toLowerCase();
+      const meta = categoryMeta[cat] || categoryMeta.other;
+      const delay = i * 0.03;
+
+      return `
+      <tr class="analytics-row" style="animation-delay:${delay}s">
+        <td class="col-date">${formatDate(e.createdAt || e.date)}</td>
+        <td class="col-desc">
+          <span class="expense-icon cat-${cat}" style="width:26px;height:26px;font-size:12px;display:inline-flex;margin-right:8px;vertical-align:middle;">${meta.icon}</span>
+          ${e.description || "—"}
+        </td>
+        <td class="col-cat"><span class="cat-pill cat-${cat}">${meta.label}</span></td>
+        <td class="col-income ${income ? "val-income" : "val-empty"}">${income ? formatCurrency(amt) : "—"}</td>
+        <td class="col-expense ${!income ? "val-expense" : "val-empty"}">${!income ? formatCurrency(amt) : "—"}</td>
+      </tr>`;
+    })
+    .join("");
+
+  const savings = totalIncome - totalExpense;
+  const savingsClass = savings >= 0 ? "val-income" : "val-expense";
+
+  // ── Yearly totals ─────────────────────────────────────────────────────────
+  let yIncome = 0,
+    yExpense = 0;
+  yearlyRows.forEach((e) => {
+    const amt = parseFloat(e.amount || 0);
+    if (isIncome(e)) yIncome += amt;
+    else yExpense += amt;
+  });
+  const ySavings = yIncome - yExpense;
+  const ySavingsClass = ySavings >= 0 ? "val-income" : "val-expense";
+
+  const rangeLabel =
+    range === "daily"
+      ? "Today"
+      : range === "weekly"
+        ? "This Week"
+        : "This Month";
+
+  container.innerHTML = `
+    <!-- Monthly / range table -->
+    <div class="analytics-period-label">${rangeLabel}</div>
+
+    ${
+      sorted.length === 0
+        ? `<div class="empty-state" style="padding:30px 0">
+            <p class="empty-title">No transactions in this period</p>
+            <p class="empty-sub">Try switching to a wider range.</p>
+           </div>`
+        : `<div class="analytics-table-wrap">
+            <table class="analytics-table">
+              <thead>
+                <tr>
+                  <th class="col-date">Date</th>
+                  <th class="col-desc">Description</th>
+                  <th class="col-cat">Category</th>
+                  <th class="col-income">Income</th>
+                  <th class="col-expense">Expense</th>
+                </tr>
+              </thead>
+              <tbody>${rowsHtml}</tbody>
+              <tfoot>
+                <tr class="analytics-total-row">
+                  <td colspan="3" class="total-label">Total</td>
+                  <td class="val-income">${formatCurrency(totalIncome)}</td>
+                  <td class="val-expense">${formatCurrency(totalExpense)}</td>
+                </tr>
+                <tr class="analytics-savings-row">
+                  <td colspan="3" class="total-label">
+                    <span class="savings-badge">Savings</span>
+                    <span style="font-size:11px;color:var(--text-muted);font-weight:400"> (Income − Expense)</span>
+                  </td>
+                  <td colspan="2" class="savings-val ${savingsClass}">${formatCurrency(savings)}</td>
+                </tr>
+              </tfoot>
+            </table>
+           </div>`
+    }
+
+    <!-- Yearly summary -->
+    <div class="analytics-yearly-block">
+      <div class="analytics-period-label yearly-label">
+        ${now.getFullYear()} — Year at a Glance
+      </div>
+      <div class="yearly-summary-grid">
+        <div class="yearly-tile yearly-income">
+          <span class="yearly-tile-label">Total Income</span>
+          <span class="yearly-tile-value">${formatCurrency(yIncome)}</span>
+        </div>
+        <div class="yearly-tile yearly-expense">
+          <span class="yearly-tile-label">Total Expense</span>
+          <span class="yearly-tile-value">${formatCurrency(yExpense)}</span>
+        </div>
+        <div class="yearly-tile yearly-savings">
+          <span class="yearly-tile-label">Net Savings</span>
+          <span class="yearly-tile-value ${ySavingsClass}">${formatCurrency(ySavings)}</span>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 // PAGE LOAD (PREMIUM OR NON-PREMIUM UI) ==========================================
 function renderPremiumUI() {
   const token = localStorage.getItem("token");
@@ -158,6 +377,8 @@ function renderPremiumUI() {
     document
       .getElementById("leaderboardBtn")
       .addEventListener("click", showLeaderboard);
+    injectAnalyticsCard();
+    renderAnalytics("monthly");
   }
 }
 
@@ -252,6 +473,12 @@ async function loadExpenses() {
     const expenses = res.data?.expenses || res.data || [];
     updateSummary(expenses);
     renderExpenses(expenses);
+    // refresh analytics if premium
+    if (isPremiumUser()) {
+      const activeFilter = document.querySelector(".filter-btn.active");
+      const range = activeFilter?.dataset.range || "monthly";
+      renderAnalytics(range);
+    }
   } catch (err) {
     expenseList.innerHTML = "";
     const serverMsg = err.response?.data?.message || err.response?.data?.error;
@@ -446,80 +673,6 @@ async function deleteExpense(id, btn) {
 }
 
 // RENDER PREMIUM UI =============================================================
-function renderPremiumUI() {
-  const token = localStorage.getItem("token");
-  if (!token) return;
-
-  const user = parseJwt(token);
-  if (!user) return;
-
-  const mainContent = document.querySelector(".main-content");
-  const secondCard = document.querySelectorAll(".card")[1]; // expense list card
-
-  // ── Premium container (banner) ──
-  const premiumContainer = document.createElement("div");
-  premiumContainer.id = "premiumContainer";
-
-  if (user.isPremium) {
-    premiumContainer.innerHTML = `
-      <div class="premium-banner">
-        <div class="premium-banner-left">
-          <div class="premium-icon">
-            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-            </svg>
-          </div>
-          <div>
-            <p class="premium-title">Premium member</p>
-            <p class="premium-sub">You have access to all premium features</p>
-          </div>
-        </div>
-        <button class="leaderboard-btn" id="leaderboardBtn">Show Leaderboard 🏆</button>
-      </div>
-    `;
-  } else {
-    premiumContainer.innerHTML = `
-      <div class="upgrade-banner">
-        <div class="upgrade-left">
-          <div class="upgrade-icon">
-            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-            </svg>
-          </div>
-          <div>
-            <p class="upgrade-title">Upgrade to Premium</p>
-            <p class="upgrade-sub">Get access to leaderboards and advanced insights</p>
-          </div>
-        </div>
-        <a href="/premium.html" class="upgrade-btn">Upgrade</a>
-      </div>
-    `;
-  }
-
-  // inject before the expense list card
-  mainContent.insertBefore(premiumContainer, secondCard);
-
-  // ── Leaderboard card — separate card AFTER expense list card ──
-  if (user.isPremium) {
-    const leaderboardCard = document.createElement("section");
-    leaderboardCard.id = "leaderboardCard";
-    leaderboardCard.className = "card";
-    leaderboardCard.style.display = "none"; // hidden by default
-    leaderboardCard.innerHTML = `
-      <div class="card-header">
-        <h2 class="card-title">🏆 Monthly Leaderboard</h2>
-      </div>
-      <div id="leaderboardList"></div>
-    `;
-
-    // inject AFTER the expense list card
-    secondCard.insertAdjacentElement("afterend", leaderboardCard);
-
-    document
-      .getElementById("leaderboardBtn")
-      .addEventListener("click", showLeaderboard);
-  }
-}
 renderPremiumUI();
 
 // REFRESH BUTTON CLICK =========================================================
