@@ -235,94 +235,95 @@ function renderAnalytics(range = "monthly") {
   const container = document.getElementById("analyticsContent");
   if (!container) return;
 
-  // Grab expenses already in the DOM / re-fetch via axios
-  const token2 = localStorage.getItem("token");
-  axios
-    .get(`${api}/expense/report`, {
-      headers: { Authorization: `Bearer ${token2}` },
-    })
-    .then((res) => {
-      const raw = res.data?.expenses || res.data || [];
+  // fetch paged data + all data for yearly totals in parallel
+  Promise.all([
+    axios.get(
+      `${api}/expense/report?page=${currentAnalyticsPage}&range=${range}`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    ),
+    axios.get(`${api}/expense/report?page=1&limit=9999&range=${range}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+  ])
+    .then(([pagedRes, allRes]) => {
+      const raw = pagedRes.data.expenses || [];
+      const totalPages = pagedRes.data.totalPages;
+      const totalCount = pagedRes.data.totalCount;
+      const yearlyData = allRes.data.expenses || [];
 
-      // ── Build rows filtered by range ──────────────────────────────────────
-      const now = new Date();
-      const filtered = raw.filter((e) => {
-        const d = new Date(e.createdAt || e.date || 0);
-        if (range === "daily") {
-          return d.toDateString() === now.toDateString();
-        } else if (range === "weekly") {
-          const weekAgo = new Date(now);
-          weekAgo.setDate(now.getDate() - 6);
-          return d >= weekAgo && d <= now;
-        } else {
-          // monthly
-          return (
-            d.getMonth() === now.getMonth() &&
-            d.getFullYear() === now.getFullYear()
-          );
-        }
-      });
-
-      // ── Build yearly totals ───────────────────────────────────────────────
-      const yearlyData = raw.filter((e) => {
-        const d = new Date(e.createdAt || e.date || 0);
-        return d.getFullYear() === now.getFullYear();
-      });
-      console.log("FILTERED LENGTH:", filtered.length);
-      console.log("YEARLY LENGTH:", yearlyData.length);
-      renderAnalyticsTable(container, filtered, yearlyData, range);
+      renderAnalyticsTable(
+        container,
+        raw,
+        yearlyData,
+        range,
+        totalPages,
+        totalCount,
+      );
     })
     .catch(() => {
       container.innerHTML = `<p style="font-size:13px;color:#dc2626;padding:10px 0">Failed to load analytics.</p>`;
     });
 }
 
-function renderAnalyticsTable(container, rows, yearlyRows, range) {
-  // ── Per-entry classification: treat "salary" category as income, rest as expense
-  // If your backend has an explicit "type" field, swap e.category === "salary" with e.type === "income"
+let currentAnalyticsPage = 1;
+const ANALYTICS_PAGE_SIZE = 5;
+function renderAnalyticsTable(
+  container,
+  rows,
+  yearlyRows,
+  range,
+  totalPages,
+  totalCount,
+) {
   const now = new Date();
   const isIncome = (e) =>
     (e.type || "").toLowerCase() === "income" ||
     (e.category || "").toLowerCase() === "salary";
 
-  const sorted = [...rows].sort(
-    (a, b) =>
-      new Date(b.createdAt || b.date || 0) -
-      new Date(a.createdAt || a.date || 0),
-  );
+  // no sorting needed — backend already sorted
+  const pageRows = rows;
 
-  let totalIncome = 0;
-  let totalExpense = 0;
+  let pageIncome = 0;
+  let pageExpense = 0;
+  let grandIncome = 0;
+  let grandExpense = 0;
 
-  const rowsHtml = sorted
+  yearlyRows.forEach((e) => {
+    const amt = parseFloat(e.amount || 0);
+    if (isIncome(e)) grandIncome += amt;
+    else grandExpense += amt;
+  });
+  const grandSavings = grandIncome - grandExpense;
+  const grandSavingsClass = grandSavings >= 0 ? "val-income" : "val-expense";
+
+  const rowsHtml = pageRows
     .map((e, i) => {
       const income = isIncome(e);
       const amt = parseFloat(e.amount || 0);
-      if (income) totalIncome += amt;
-      else totalExpense += amt;
+      if (income) pageIncome += amt;
+      else pageExpense += amt;
 
       const cat = (e.category || "other").toLowerCase();
       const meta = categoryMeta[cat] || categoryMeta.other;
-      const delay = i * 0.03;
 
       return `
-      <tr class="analytics-row" style="animation-delay:${delay}s">
-        <td class="col-date">${formatDate(e.createdAt || e.date)}</td>
-        <td class="col-desc">
-          <span class="expense-icon cat-${cat}" style="width:26px;height:26px;font-size:12px;display:inline-flex;margin-right:8px;vertical-align:middle;">${meta.icon}</span>
-          ${e.description || "—"}
-        </td>
-        <td class="col-cat"><span class="cat-pill cat-${cat}">${meta.label}</span></td>
-        <td class="col-income ${income ? "val-income" : "val-empty"}">${income ? formatCurrency(amt) : "—"}</td>
-        <td class="col-expense ${!income ? "val-expense" : "val-empty"}">${!income ? formatCurrency(amt) : "—"}</td>
-      </tr>`;
+    <tr class="analytics-row" style="animation-delay:${i * 0.03}s">
+      <td class="col-date">${formatDate(e.createdAt || e.date)}</td>
+      <td class="col-desc">
+        <span class="expense-icon cat-${cat}" style="width:26px;height:26px;font-size:12px;display:inline-flex;margin-right:8px;vertical-align:middle;">${meta.icon}</span>
+        ${e.description || "—"}
+      </td>
+      <td class="col-cat"><span class="cat-pill cat-${cat}">${meta.label}</span></td>
+      <td class="col-income ${income ? "val-income" : "val-empty"}">${income ? formatCurrency(amt) : "—"}</td>
+      <td class="col-expense ${!income ? "val-expense" : "val-empty"}">${!income ? formatCurrency(amt) : "—"}</td>
+    </tr>`;
     })
     .join("");
 
-  const savings = totalIncome - totalExpense;
-  const savingsClass = savings >= 0 ? "val-income" : "val-expense";
+  const pageSavings = pageIncome - pageExpense;
+  const pageSavingsClass = pageSavings >= 0 ? "val-income" : "val-expense";
 
-  // ── Yearly totals ─────────────────────────────────────────────────────────
+  // ── yearly totals ──
   let yIncome = 0,
     yExpense = 0;
   yearlyRows.forEach((e) => {
@@ -340,47 +341,100 @@ function renderAnalyticsTable(container, rows, yearlyRows, range) {
         ? "This Week"
         : "This Month";
 
-  container.innerHTML = `
-    <!-- Monthly / range table -->
-    <div class="analytics-period-label">${rangeLabel}</div>
+  // ── pagination buttons ──
+  let paginationHtml = "";
+  if (totalPages > 1) {
+    const prevDisabled = currentAnalyticsPage === 1 ? "disabled" : "";
+    const nextDisabled = currentAnalyticsPage === totalPages ? "disabled" : "";
 
+    let pageButtons = "";
+    const pages = new Set();
+    pages.add(1);
+    pages.add(totalPages);
+    for (
+      let p = Math.max(2, currentAnalyticsPage - 1);
+      p <= Math.min(totalPages - 1, currentAnalyticsPage + 1);
+      p++
+    ) {
+      pages.add(p);
+    }
+    const pageArray = [...pages].sort((a, b) => a - b);
+    pageArray.forEach((p, i) => {
+      if (i > 0 && p - pageArray[i - 1] > 1) {
+        pageButtons += `<span class="page-ellipsis">…</span>`;
+      }
+      pageButtons += `<button class="page-btn ${p === currentAnalyticsPage ? "active" : ""}" data-page="${p}">${p}</button>`;
+    });
+
+    paginationHtml = `
+      <div class="pagination-bar">
+        <button class="page-nav" data-page="${currentAnalyticsPage - 1}" ${prevDisabled}>
+          <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        ${pageButtons}
+        <button class="page-nav" data-page="${currentAnalyticsPage + 1}" ${nextDisabled}>
+          <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>`;
+  }
+
+  const activeFilter = document.querySelector(".filter-btn.active");
+  const activeRange = activeFilter?.dataset.range || "monthly";
+
+  container.innerHTML = `
+    <div class="analytics-period-label">${rangeLabel}</div>
     ${
-      sorted.length === 0
+      rows.length === 0
         ? `<div class="empty-state" style="padding:30px 0">
-            <p class="empty-title">No transactions in this period</p>
-            <p class="empty-sub">Try switching to a wider range.</p>
-           </div>`
+          <p class="empty-title">No transactions in this period</p>
+          <p class="empty-sub">Try switching to a wider range.</p>
+         </div>`
         : `<div class="analytics-table-wrap">
-            <table class="analytics-table">
-              <thead>
-                <tr>
-                  <th class="col-date">Date</th>
-                  <th class="col-desc">Description</th>
-                  <th class="col-cat">Category</th>
-                  <th class="col-income">Income</th>
-                  <th class="col-expense">Expense</th>
-                </tr>
-              </thead>
-              <tbody>${rowsHtml}</tbody>
-              <tfoot>
-                <tr class="analytics-total-row">
-                  <td colspan="3" class="total-label">Total</td>
-                  <td class="val-income">${formatCurrency(totalIncome)}</td>
-                  <td class="val-expense">${formatCurrency(totalExpense)}</td>
-                </tr>
-                <tr class="analytics-savings-row">
-                  <td colspan="3" class="total-label">
-                    <span class="savings-badge">Savings</span>
-                    <span style="font-size:11px;color:var(--text-muted);font-weight:400"> (Income − Expense)</span>
-                  </td>
-                  <td colspan="2" class="savings-val ${savingsClass}">${formatCurrency(savings)}</td>
-                </tr>
-              </tfoot>
-            </table>
-           </div>`
+          <table class="analytics-table">
+            <thead>
+              <tr>
+                <th class="col-date">Date</th>
+                <th class="col-desc">Description</th>
+                <th class="col-cat">Category</th>
+                <th class="col-income">Income</th>
+                <th class="col-expense">Expense</th>
+              </tr>
+            </thead>
+            <tbody>${rowsHtml}</tbody>
+            <tfoot>
+              <tr class="analytics-total-row">
+                <td colspan="3" class="total-label">
+                  Page Total
+                  <span style="font-size:11px;font-weight:400;color:var(--text-muted)"> (${totalCount} total entries)</span>
+                </td>
+                <td class="val-income">${formatCurrency(pageIncome)}</td>
+                <td class="val-expense">${formatCurrency(pageExpense)}</td>
+              </tr>
+              <tr class="analytics-savings-row">
+                <td colspan="3" class="total-label">
+                  <span class="savings-badge">Page Savings</span>
+                  <span style="font-size:11px;color:var(--text-muted);font-weight:400"> (Income − Expense)</span>
+                </td>
+                <td colspan="2" class="savings-val ${pageSavingsClass}">${formatCurrency(pageSavings)}</td>
+              </tr>
+              <tr class="analytics-total-row" style="border-top: 2px solid var(--border);">
+                <td colspan="3" class="total-label">Grand Total (All ${totalCount} entries)</td>
+                <td class="val-income">${formatCurrency(grandIncome)}</td>
+                <td class="val-expense">${formatCurrency(grandExpense)}</td>
+              </tr>
+              <tr class="analytics-savings-row">
+                <td colspan="3" class="total-label">
+                  <span class="savings-badge">Overall Savings</span>
+                  <span style="font-size:11px;color:var(--text-muted);font-weight:400"> (Income − Expense)</span>
+                </td>
+                <td colspan="2" class="savings-val ${grandSavingsClass}">${formatCurrency(grandSavings)}</td>
+              </tr>
+            </tfoot>
+          </table>
+         </div>
+         ${paginationHtml}`
     }
 
-    <!-- Yearly summary -->
     <div class="analytics-yearly-block">
       <div class="analytics-period-label yearly-label">
         ${now.getFullYear()} — Year at a Glance
@@ -401,6 +455,17 @@ function renderAnalyticsTable(container, rows, yearlyRows, range) {
       </div>
     </div>
   `;
+
+  // ── pagination click ──
+  container.querySelectorAll(".page-btn, .page-nav").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const p = parseInt(btn.dataset.page);
+      if (!isNaN(p) && p >= 1 && p <= totalPages) {
+        currentAnalyticsPage = p;
+        renderAnalytics(activeRange);
+      }
+    });
+  });
 }
 
 // PAGE LOAD (PREMIUM OR NON-PREMIUM UI) ==========================================
