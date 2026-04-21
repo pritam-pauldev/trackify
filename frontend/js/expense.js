@@ -88,6 +88,94 @@ function isPremiumUser() {
 
 // ── PREMIUM ANALYTICS ────────────────────────────────────────────────────────
 
+document.addEventListener("click", async (e) => {
+  if (!e.target.closest("#downloadReportBtn")) return;
+
+  const { jsPDF } = window.jspdf;
+  const element = document.getElementById("analyticsCard");
+
+  // ── hide emojis before capture ──
+  const emojiSpans = element.querySelectorAll(".expense-icon");
+  emojiSpans.forEach((el) => (el.style.visibility = "hidden"));
+
+  // ── expand full height ──
+  const prevOverflow = element.style.overflow;
+  element.style.overflow = "visible";
+  const tableWrap = element.querySelector(".analytics-table-wrap");
+  const prevTableOverflow = tableWrap ? tableWrap.style.overflow : "";
+  if (tableWrap) tableWrap.style.overflow = "visible";
+
+  await new Promise((r) => setTimeout(r, 200));
+
+  const canvas = await html2canvas(element, {
+    scale: 2,
+    useCORS: true,
+    logging: false,
+    scrollX: 0,
+    scrollY: 0,
+    x: 0,
+    y: 0,
+    width: element.offsetWidth,
+    height: element.scrollHeight,
+    ignoreElements: (el) =>
+      el.classList.contains("expense-icon") || el.tagName === "BUTTON",
+  });
+
+  // ── restore ──
+  emojiSpans.forEach((el) => (el.style.visibility = "visible"));
+  element.style.overflow = prevOverflow;
+  if (tableWrap) tableWrap.style.overflow = prevTableOverflow;
+
+  const imgData = canvas.toDataURL("image/png");
+  const pdf = new jsPDF("p", "mm", "a4");
+  const pageWidth = pdf.internal.pageSize.getWidth();
+  const pageHeight = pdf.internal.pageSize.getHeight();
+  const margin = 10;
+  const contentWidth = pageWidth - margin * 2;
+
+  const ratio = contentWidth / canvas.width;
+  const totalHeightMM = canvas.height * ratio;
+  const pageContentH = pageHeight - margin * 2;
+  const totalPages = Math.ceil(totalHeightMM / pageContentH);
+
+  for (let i = 0; i < totalPages; i++) {
+    if (i > 0) pdf.addPage();
+
+    const srcY = (i * pageContentH) / ratio;
+    const srcH = Math.min(pageContentH / ratio, canvas.height - srcY);
+    const drawH = srcH * ratio;
+
+    const slice = document.createElement("canvas");
+    slice.width = canvas.width;
+    slice.height = Math.ceil(srcH);
+    const ctx = slice.getContext("2d");
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, slice.width, slice.height);
+    ctx.drawImage(
+      canvas,
+      0,
+      srcY,
+      canvas.width,
+      srcH,
+      0,
+      0,
+      canvas.width,
+      srcH,
+    );
+
+    pdf.addImage(
+      slice.toDataURL("image/png"),
+      "PNG",
+      margin,
+      margin,
+      contentWidth,
+      drawH,
+    );
+  }
+
+  pdf.save("financial-report.pdf");
+});
+
 // Inject the analytics card after leaderboard card (called inside renderPremiumUI if premium)
 function injectAnalyticsCard() {
   if (document.getElementById("analyticsCard")) return; // already injected
@@ -103,7 +191,15 @@ function injectAnalyticsCard() {
         <button class="filter-btn" data-range="weekly">Weekly</button>
         <button class="filter-btn" data-range="daily">Daily</button>
       </div>
-    </div>
+        <button class="download-btn" id="downloadReportBtn">
+          <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          Download PDF
+        </button>
+      </div>
     <div id="analyticsContent">
       <div class="skeleton-row"></div>
       <div class="skeleton-row"></div>
@@ -133,6 +229,7 @@ function injectAnalyticsCard() {
 function renderAnalytics(range = "monthly") {
   const token = localStorage.getItem("token");
   const user = parseJwt(token);
+  console.log("USER:", user);
   if (!user?.isPremium) return;
 
   const container = document.getElementById("analyticsContent");
@@ -171,7 +268,8 @@ function renderAnalytics(range = "monthly") {
         const d = new Date(e.createdAt || e.date || 0);
         return d.getFullYear() === now.getFullYear();
       });
-
+      console.log("FILTERED LENGTH:", filtered.length);
+      console.log("YEARLY LENGTH:", yearlyData.length);
       renderAnalyticsTable(container, filtered, yearlyData, range);
     })
     .catch(() => {
@@ -182,6 +280,7 @@ function renderAnalytics(range = "monthly") {
 function renderAnalyticsTable(container, rows, yearlyRows, range) {
   // ── Per-entry classification: treat "salary" category as income, rest as expense
   // If your backend has an explicit "type" field, swap e.category === "salary" with e.type === "income"
+  const now = new Date();
   const isIncome = (e) =>
     (e.type || "").toLowerCase() === "income" ||
     (e.category || "").toLowerCase() === "salary";

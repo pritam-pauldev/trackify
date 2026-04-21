@@ -1,12 +1,13 @@
-
 const express = require("express");
 const route = express.Router();
 const authMiddleware = require("../middleware/authMiddleware");
 const premiumMiddleware = require("../middleware/premiumMiddleware");
 const expenseController = require("../controllers/expensesController");
 const leaderboardController = require("../controllers/leaderboardController");
+const financeReportController = require("../controllers/financeReportController");
 
 route.post("/add", authMiddleware, expenseController.addExpense);
+route.get("/report", authMiddleware, financeReportController.getReport);
 route.get("/", authMiddleware, expenseController.getExpense);
 route.delete("/:id", authMiddleware, expenseController.deleteExpense);
 
@@ -15,7 +16,7 @@ route.get(
   "/leaderboard",
   authMiddleware,
   premiumMiddleware,
-  leaderboardController.getLeaderboard
+  leaderboardController.getLeaderboard,
 );
 
 module.exports = route;
