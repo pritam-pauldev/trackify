@@ -6,7 +6,7 @@ const payBtn = document.getElementById("payBtn");
 
 payBtn.addEventListener("click", async () => {
   try {
-    const amount = document.getElementById("amount").value;
+    const amount = 199;
     const phone = document.getElementById("phone").value;
 
     const token = localStorage.getItem("token");

@@ -57,12 +57,12 @@ const successPage = (paymentId, newToken) => `
       <span class="detail-label">Payment ID</span>
       <span class="detail-value">${paymentId}</span>
     </div>
-    <a href="http://127.0.0.1:5501/expense.html" class="btn" id="dashboardBtn">
+    <a href="http://127.0.0.1:5501/signin.html" class="btn" id="dashboardBtn">
       <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
         <line x1="5" y1="12" x2="19" y2="12"/>
         <polyline points="12 5 19 12 12 19"/>
       </svg>
-      Go to dashboard
+      Sign in
     </a>
   </div>
 
@@ -136,6 +136,6 @@ const failPage = (status) => `
 `;
 
 module.exports = {
-    successPage,
-    failPage
-}
+  successPage,
+  failPage,
+};
