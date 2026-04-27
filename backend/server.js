@@ -6,12 +6,19 @@ const expensesRoute = require("./routes/expensesRoutes");
 const ordersRoute = require("./routes/ordersRoutes");
 const paymentRoute = require("./routes/paymentRoutes");
 const passwordRoute = require("./routes/passwordRoutes");
+const helmet = require("helmet");
+const compression = require("compression");
+const morgan = require("morgan");
 const cors = require("cors");
 require("./models");
 const app = express();
 
 app.use(cors());
+app.use(helmet());
+app.use(compression());
+app.use(morgan("combined")); // need some task - access.log
 app.use(express.json());
+
 app.use("/payment-success", paymentRoute);
 app.use("/user", usersRoute);
 app.use("/expense", expensesRoute);
