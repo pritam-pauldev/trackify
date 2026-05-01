@@ -1,6 +1,7 @@
+require("dotenv").config();
 const { Sequelize, DataTypes } = require("sequelize");
 
-const sequelize = new Sequelize("trackify", "root", "PRIyaNPRIya", {
+const sequelize = new Sequelize(process.env.DATABASE_NAME, "root", process.env.DATABASE_PASSWORD, {
   host: "localhost",
   dialect: "mysql",
   logging: false,
