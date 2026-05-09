@@ -4,82 +4,33 @@ let currentAnalyticsPage = 1;
 document.addEventListener("click", async (e) => {
   if (!e.target.closest("#downloadReportBtn")) return;
 
-  const { jsPDF } = window.jspdf;
-  const element = document.getElementById("analyticsCard");
+  const btn = document.querySelector("#downloadReportBtn");
+  btn.disabled = true;
+  btn.textContent = "Downloading…";
 
-  const emojiSpans = element.querySelectorAll(".expense-icon");
-  emojiSpans.forEach((el) => (el.style.visibility = "hidden"));
+  try {
+    const res = await fetch("http://localhost:3000/user/download", {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    });
 
-  const prevOverflow = element.style.overflow;
-  element.style.overflow = "visible";
-  const tableWrap = element.querySelector(".analytics-table-wrap");
-  const prevTableOverflow = tableWrap ? tableWrap.style.overflow : "";
-  if (tableWrap) tableWrap.style.overflow = "visible";
+    if (!res.ok) throw new Error(`Server error: ${res.status}`);
 
-  await new Promise((r) => setTimeout(r, 200));
+    const { fileURL } = await res.json(); // parse JSON, extract the URL
 
-  const canvas = await html2canvas(element, {
-    scale: 2,
-    useCORS: true,
-    logging: false,
-    scrollX: 0,
-    scrollY: 0,
-    x: 0,
-    y: 0,
-    width: element.offsetWidth,
-    height: element.scrollHeight,
-    ignoreElements: (el) =>
-      el.classList.contains("expense-icon") || el.tagName === "BUTTON",
-  });
-
-  emojiSpans.forEach((el) => (el.style.visibility = "visible"));
-  element.style.overflow = prevOverflow;
-  if (tableWrap) tableWrap.style.overflow = prevTableOverflow;
-
-  const imgData = canvas.toDataURL("image/png");
-  const pdf = new jsPDF("p", "mm", "a4");
-  const pageWidth = pdf.internal.pageSize.getWidth();
-  const pageHeight = pdf.internal.pageSize.getHeight();
-  const margin = 10;
-  const contentWidth = pageWidth - margin * 2;
-  const ratio = contentWidth / canvas.width;
-  const totalHeightMM = canvas.height * ratio;
-  const pageContentH = pageHeight - margin * 2;
-  const totalPages = Math.ceil(totalHeightMM / pageContentH);
-
-  for (let i = 0; i < totalPages; i++) {
-    if (i > 0) pdf.addPage();
-    const srcY = (i * pageContentH) / ratio;
-    const srcH = Math.min(pageContentH / ratio, canvas.height - srcY);
-    const drawH = srcH * ratio;
-    const slice = document.createElement("canvas");
-    slice.width = canvas.width;
-    slice.height = Math.ceil(srcH);
-    const ctx = slice.getContext("2d");
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, slice.width, slice.height);
-    ctx.drawImage(
-      canvas,
-      0,
-      srcY,
-      canvas.width,
-      srcH,
-      0,
-      0,
-      canvas.width,
-      srcH,
-    );
-    pdf.addImage(
-      slice.toDataURL("image/png"),
-      "PNG",
-      margin,
-      margin,
-      contentWidth,
-      drawH,
-    );
+    // Create a link pointing directly to the S3 file
+    const a = document.createElement("a");
+    a.href = fileURL;
+    a.download = "expense-report.txt";
+    a.click();
+  } catch (err) {
+    console.error("Download failed:", err);
+    alert("Could not download report. Please try again.");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Download Report";
   }
-
-  pdf.save("financial-report.pdf");
 });
 
 // ── Inject analytics card ───────────────────────────────────────

@@ -27,10 +27,11 @@ app.use(morgan("combined", { stream: accessLogStream })); // need some task - ac
 app.use(express.json());
 
 app.use("/payment-success", paymentRoute);
-app.use("/user", usersRoute);
 app.use("/expense", expensesRoute);
 app.use("/order", ordersRoute);
 app.use("/password", passwordRoute);
+
+app.use("/user", usersRoute);
 
 sequelize
   .sync({ alter: true })
